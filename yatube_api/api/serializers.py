@@ -1,13 +1,8 @@
-from djoser.serializers import UserSerializer
-from posts.models import Comment, Follow, Group, Post, User
 from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
 from rest_framework.relations import SlugRelatedField
 
-
-class CustomUserSerializer(UserSerializer):
-    class Meta:
-        model = User
-        fields = ('email', 'id', 'username', 'first_name', 'last_name')
+from posts.models import Comment, Follow, Group, Post, User
 
 
 class PostSerializer(serializers.ModelSerializer):
@@ -39,6 +34,7 @@ class FollowSerializer(serializers.ModelSerializer):
     user = SlugRelatedField(
         read_only=True,
         slug_field='username',
+        default=serializers.CurrentUserDefault()
     )
     following = SlugRelatedField(
         read_only=False,
@@ -54,15 +50,15 @@ class FollowSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Нельзя подписаться на самого себя"
             )
-        if Follow.objects.filter(
-                user=user,
-                following=follow
-        ).exists():
-            raise serializers.ValidationError(
-                "Вы уже подписаны на этого автора"
-            )
         return data
 
     class Meta:
         model = Follow
         fields = '__all__'
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Follow.objects.all(),
+                fields=['user', 'following'],
+                message='Вы уже подписаны на этого автора'
+            )
+        ]
