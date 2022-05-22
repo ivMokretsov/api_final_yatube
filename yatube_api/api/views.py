@@ -20,18 +20,11 @@ class PostViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-    def perform_update(self, serializer):
-        serializer.save(author=self.request.user)
-
 
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
-    # возможно не понял комментарий
-    # Группы могут смотреть все, нужно задать permission_classes явно
-    # https://www.django-rest-framework.org/api-guide/permissions/#allowany
-    # у меня в глоб настройках проекта указано IsAuthenticatedOrReadOnly
-    # в данном случае этого не достаточно?
+    permission_classes = (permissions.AllowAny,)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -46,9 +39,6 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         post = get_object_or_404(Post, pk=self.kwargs.get('post_id'))
         serializer.save(author=self.request.user, post=post)
-
-    def perform_update(self, serializer):
-        serializer.save(author=self.request.user)
 
 
 class FollowViewSet(
